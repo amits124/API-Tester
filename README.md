@@ -1,0 +1,1 @@
+A generic REST API testing tool for testing HTTP endpoints and validating their responses.
