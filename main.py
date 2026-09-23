@@ -32,9 +32,15 @@ def update_post(post_id, title, body, user_id):
     response = requests.put(url, json=payload)
     return response
 
-def patch_post(post_id, title=None, body=None):
+def patch_post(post_id, title=None, body=None, user_id=None):
     url = f"https://jsonplaceholder.typicode.com/posts/{post_id}"
-    payload = {"title": title, "body": body}
+    payload = {}
+    if title != None:
+        payload["title"] = title
+    if body != None:
+        payload["body"] = body
+    if user_id != None:
+        payload["userId"] = user_id
     response = requests.patch(url, json=payload)
     return response
 
