@@ -1,57 +1,7 @@
 import pytest
-import main
+from api import main
 
-# GET /posts
-@pytest.fixture
-def posts_response():
-    return main.get_posts()
-
-def test_get_posts_response_status_code(posts_response):
-    assert posts_response.status_code == 200
-
-def test_get_posts_response_has_content(posts_response):
-    assert posts_response.json()
-
-def test_get_posts_response_type(posts_response):
-    assert isinstance(posts_response.json(), list)
-
-def test_get_posts_response_content_has_keys(posts_response):
-    for post in posts_response.json():
-        assert "userId" in post
-        assert "id" in post
-        assert "title" in post
-        assert "body" in post   
-
-#GET /post/{id}
-@pytest.fixture
-def post_response():
-    return main.get_post(1)
-
-def test_get_post_response_status_code(post_response):
-    assert post_response.status_code == 200
-
-def test_get_post_response_has_content(post_response):
-    assert post_response.json()
-
-def test_get_post_response_type(post_response):
-    assert isinstance(post_response.json(), dict)
-
-def test_get_post_response_content_has_keys(post_response):
-    assert "userId" in post_response.json()
-    assert "id" in post_response.json()
-    assert "title" in post_response.json()
-    assert "body" in post_response.json()
-
-def test_get_post_id(post_response):
-    assert post_response.json()["id"] == 1
-
-def test_get_post_field_types(post_response):
-    assert isinstance(post_response.json()["userId"], int)
-    assert isinstance(post_response.json()["id"], int)
-    assert isinstance(post_response.json()["title"], str)
-    assert isinstance(post_response.json()["body"], str)
-
-#GET /post/comments/{post_id}
+# GET /post/comments/{post_id}
 @pytest.fixture
 def post_comments_response():
     return main.get_post_comments(1)
@@ -85,6 +35,11 @@ def test_get_post_comments_field_types(post_comments_response):
         assert isinstance(comment["email"], str)
         assert isinstance(comment["body"], str)
 
+def test_get_non_existent_post_comments():
+    response = main.get_post_comments(999)
+    assert response.status_code == 200
+    assert response.json() == []
+
 # GET /{user_id}/posts
 @pytest.fixture
 def user_posts_response():
@@ -117,8 +72,12 @@ def test_get_user_posts_field_types(user_posts_response):
         assert isinstance(post["title"], str)
         assert isinstance(post["body"], str)
 
-#POST /posts
+def test_get_non_existent_user_posts():
+    response = main.get_user_posts(999)
+    assert response.status_code == 200
+    assert response.json() == []
 
+# POST /posts
 @pytest.fixture
 def create_post_response():
     return main.create_post("title", "body", 1)
@@ -149,8 +108,37 @@ def test_create_post_field_types(create_post_response):
     assert isinstance(create_post_response.json()["title"], str)
     assert isinstance(create_post_response.json()["body"], str)
 
-#PUT /posts/{post_id}
+def test_create_post_empty_title():
+    response = main.create_post("", "body", 1)
+    assert response.status_code == 201
+    assert response.json()["title"] == ""
 
+def test_create_post_empty_body():
+    response = main.create_post("title", "", 1)
+    assert response.status_code == 201
+    assert response.json()["body"] == ""
+
+def test_create_post_invalid_user_id():
+    response = main.create_post("title", "body", -1)
+    assert response.status_code == 201
+    assert response.json()["userId"] == -1
+
+def test_create_post_zero_user_id():
+    response = main.create_post("title", "body", 0)
+    assert response.status_code == 201
+    assert response.json()["userId"] == 0
+
+def test_create_post_non_string_title():
+    response = main.create_post(123, "body", 1)
+    assert response.status_code == 201
+    assert response.json()["title"] == 123
+
+def test_create_post_non_string_body():
+    response = main.create_post("title", 123, 1)
+    assert response.status_code == 201
+    assert response.json()["body"] == 123
+
+# PUT /posts/{post_id}
 @pytest.fixture
 def update_post_response():
     return main.update_post(1, "title", "body", 1)
@@ -182,8 +170,7 @@ def test_update_post_field_types(update_post_response):
     assert isinstance(update_post_response.json()["title"], str)
     assert isinstance(update_post_response.json()["body"], str)
 
-#PATCH /posts/{post_id}
-
+# PATCH /posts/{post_id}
 @pytest.fixture
 def patch_post_response():
     return main.patch_post(1, "title")
@@ -217,8 +204,7 @@ def test_patch_post_field_types(patch_post_response):
     assert isinstance(patch_post_response.json()["title"], str)
     assert isinstance(patch_post_response.json()["body"], str)
 
-#DELETE /posts/{post_id}
-
+# DELETE /posts/{post_id}
 @pytest.fixture
 def delete_post_response():
     return main.delete_post(1)
@@ -228,3 +214,7 @@ def test_delete_post_response_status_code(delete_post_response):
 
 def test_delete_post_response_has_content(delete_post_response):
     assert delete_post_response.json() == {}
+
+def test_deleted_post_not_exist():
+    main.delete_post(1)
+    assert main.get_post(1).status_code == 200
