@@ -21,7 +21,7 @@ def test_patch_post_response_content_has_keys(patch_post_response):
     assert "title" in patch_post_response.json()
     assert "body" in patch_post_response.json()
 
-def test_patch_post_content_match_request():
+def test_patch_post_title():
     original_post = main.get_post(1).json()
     response = main.patch_post(1, "title")
     updated_post = response.json()
@@ -41,3 +41,27 @@ def test_patch_post_body():
     assert updated_post["title"] == original_post["title"]
     assert updated_post["body"] == "new body"
     assert updated_post["userId"] == original_post["userId"]
+
+def test_patch_post_multiple_fields():
+    original_post = main.get_post(1).json()
+
+    response = main.patch_post(1, title="new title", body="new body")
+    updated_post = response.json()
+
+    assert response.status_code == 200
+    assert updated_post["title"] == "new title"
+    assert updated_post["body"] == "new body"
+    assert updated_post["userId"] == original_post["userId"]
+    assert updated_post["id"] == original_post["id"]
+
+def test_patch_post_without_fields():
+    original_post = main.get_post(1).json()
+
+    response = main.patch_post(1)
+    updated_post = response.json()
+
+    assert response.status_code == 200
+    assert updated_post == original_post
+
+def test_patch_post_response_content_type(patch_post_response):
+    assert "application/json" in patch_post_response.headers["Content-Type"]
